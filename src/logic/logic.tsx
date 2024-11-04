@@ -18,6 +18,16 @@ export default class ContextFreeGrammar {
         this.table = {}
     }
 
+    reset() {
+        this.nonterminals = new Set()
+        this.terminals = new Set()
+        this.grammar = {}
+        this.order = []
+        this.firsts = {}
+        this.follows = {}
+        this.table = {}
+    }
+
     addCFG(cfg: string) {
         this.#parseGrammar(cfg)
         this.#eliminateLeftRecursion()
@@ -457,6 +467,7 @@ export default class ContextFreeGrammar {
                 stack.pop();
             }
         }
+        
         return process;
     }
 
@@ -478,6 +489,10 @@ export default class ContextFreeGrammar {
 
     getOrder() {
         return this.order;
+    }
+
+    getTerminals() {
+        return this.terminals;
     }
 }
 

@@ -8,6 +8,10 @@ const cfg = new ContextFreeGrammar();
 export default function Home() {
   const [grammarString, setGrammarString] = useState('');
   const [isValid, setIsValid] = useState(false);
+  const [error, setError] = useState(false);
+  const [stringToEvaluate, setStringToEvaluate] = useState('');
+  const [evaluationResult, setEvaluationResult] = useState<string[][] | null>(null);
+  const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -28,38 +32,55 @@ export default function Home() {
   };
 
   const validateGrammar = (content: string) => {
+
+    setGrammarString('');
+    cfg.reset();
+    setEvaluationResult(null);
+
     const lines = content.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
     let valid = true;
 
     for (const line of lines) {
-      const productionRegex = /^[A-Z]->[A-Za-z&]+$/;
+      const productionRegex = /^[A-Z]+->.+$/;
       if (!productionRegex.test(line)) {
-        console.error(`Invalid production: ${line}`);
         valid = false;
-        break;
       }
     }
 
-    if (valid) {
-      console.log('Grammar is valid.');
-      const grammarString = lines.join('\n');
+    const grammarString = lines.join('\n');
+
+    if (!valid) {
+      setError(true);
+      setIsValid(false);
+      setGrammarString(grammarString);
+    } else {
       cfg.addCFG(grammarString);
       console.log(cfg);
       setIsValid(true);
+      setError(false);
       setGrammarString(grammarString);
-    } else {
-      console.error('Grammar validation failed.');
-      setIsValid(false);
     }
   };
 
+  const input = () => {
+    return (
+      <div className={styles.container}>
+        <h2>Input Grammar</h2>
+        <div className={styles.box}>
+          <div className={styles.results}>
+            {grammarString}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const grammar = () => {
+
     if (!grammarString) return null;
   
-    // Parse the cfg object and display the grammar rules in the specified order
     const rules = [];
     
-    // Iterate over cfg.order to maintain the desired sequence
     for (const nonTerminal of cfg.getOrder()) {
       const productions = cfg.getGrammar()[nonTerminal];
       if (productions) {
@@ -126,8 +147,129 @@ export default function Home() {
       </div>
     );
   };
-  
 
+  const showErrorMessage = () => {
+    return (
+      <div className={styles.container}>
+        <h2>Invalid Grammar</h2>
+        <p>Please upload a valid .txt file containing a context-free grammar.</p>
+        <h3>File Content</h3>
+        <div className={styles.box}>
+          <div className={styles.results}>
+            {grammarString}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const mTable = () => {
+    const terminals = Array.from(cfg.getTerminals()); 
+    terminals.push('$'); 
+    const order = cfg.getOrder(); 
+    const tableM = cfg.getTable(); 
+  
+    const headers = (
+      <tr>
+        <th></th>
+        {terminals.map((terminal) => (
+          <th key={terminal}>{terminal}</th>
+        ))}
+      </tr>
+    );
+  
+    const rows = order.map((nonTerminal) => {
+      return (
+        <tr key={nonTerminal}>
+          <td>{nonTerminal}</td>
+          {terminals.map((terminal) => {
+            const production = tableM[nonTerminal] ? tableM[nonTerminal][terminal] : null;
+            return (
+              <td key={`${nonTerminal}-${terminal}`}>
+                {production ? `${nonTerminal}->${production}` : ""}
+              </td>
+            );
+          })}
+        </tr>
+      );
+    });
+  
+    return (
+      <div className={styles.mtable}>
+        <table className={styles.table}>
+          <thead>{headers}</thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const validateInput = () => {
+    
+    const evaliuateString = (string: string) => {
+      const result = cfg.ASDalgorithm(string);    
+      const rows = result
+                  .split('\n')
+                  .map(line => line.split('\t'))
+                  .filter(
+                    row => row.some(cell => cell.trim() !== '') && row.join('\t') !== 'Stack\tInput\tOutput'
+                  );
+
+      const lastLine = rows[rows.length - 1];
+      const accepted = lastLine[0] === '$' && lastLine[1] === '$';
+    
+      setEvaluationResult(rows);
+      setIsAccepted(accepted);
+    };
+  
+    return (
+      <div className={styles.container}>
+        <h2>String Recognition</h2>
+        <div className={styles.inputwrapper}>
+          <input
+            type="text"
+            placeholder="Enter a string"
+            className={styles.inputstring}
+            onChange={(e) => setStringToEvaluate(e.target.value)}
+          />
+          <button
+            className={styles.inputbutton}
+            onClick={() => evaliuateString(stringToEvaluate)}
+          >
+            Validate
+          </button>
+        </div>
+        
+        {evaluationResult && (
+          <div className={styles.resultContainer}>
+            <h3>Parsing Steps</h3>
+            <table className={styles.resultTable}>
+              <thead>
+                <tr>
+                  <th>Stack</th>
+                  <th>Input</th>
+                  <th>Output</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evaluationResult.map((row, index) => (
+                  <tr key={index}>
+                    <td>{row[0]}</td>
+                    <td>{row[1]}</td>
+                    <td>{row[2]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <h4 className={styles.acceptanceStatus}>
+              {isAccepted ? 'String is accepted!' : 'String is not accepted.'}
+            </h4>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -141,7 +283,7 @@ export default function Home() {
           <li>Each terminal and non-terminal is represented by a single character, with no spaces between symbols.</li>
         </ul>
         <div className={styles.box}>
-          <h2>Example Grammar:</h2>
+          <h2>Example Grammar</h2>
           <pre>
             S-{">"}(L)<br/>
             S-{">"}a<br/>
@@ -153,14 +295,18 @@ export default function Home() {
         </div>
       </div>
 
+      {isValid && input()}
+
+      {error && showErrorMessage()}
+
       {isValid && (
         <div className={styles.container}>
-          <h2>Grammar after factorization and without left recursion
+          <h2>Grammar After Factorization and Without Left Recursion
           </h2>
           <div className={styles.box}>
-            <pre>
+            <div className={styles.results}>
             {grammar()}
-            </pre>
+            </div>
           </div>
         </div>
       )}
@@ -172,6 +318,14 @@ export default function Home() {
         </div>
       )}
 
+      {isValid && (
+        <div className={styles.container}>
+          <h2>M-Table</h2>
+          {mTable()}
+        </div>
+      )}
+
+      {isValid && validateInput()}
 
     </div>
   );
