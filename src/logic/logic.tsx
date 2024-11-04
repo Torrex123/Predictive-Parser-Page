@@ -121,8 +121,8 @@ export default class ContextFreeGrammar {
             if (symbols.length < 2) return ""; 
             
             const findCommonPrefix = (arr1: string[], arr2: string[]): string[] => {
-            let common: string[] = [];
-            let minLength = Math.min(arr1.length, arr2.length); 
+            const common: string[] = [];
+            const minLength = Math.min(arr1.length, arr2.length); 
             for (let i = 0; i < minLength; i++) {
                 if (arr1[i] !== arr2[i]) break;
                 common.push(arr1[i]);
@@ -133,7 +133,7 @@ export default class ContextFreeGrammar {
             let longestPrefix: string[] = [];
             for (let i = 0; i < symbols.length; i++) {
             for (let j = i + 1; j < symbols.length; j++) {
-                let currentPrefix = findCommonPrefix(symbols[i] as string[], symbols[j] as string[]);
+                const currentPrefix = findCommonPrefix(symbols[i] as string[], symbols[j] as string[]);
                 if (currentPrefix.length > longestPrefix.length) {
                 longestPrefix = currentPrefix;
                 }
@@ -447,8 +447,8 @@ export default class ContextFreeGrammar {
         let process = "Stack\tInput\tOutput\n";
     
         while (stack.length > 0) {
-            var currentSymbol = stack[stack.length - 1];
-            var currentInput = input[0];
+            let currentSymbol = stack[stack.length - 1];
+            let currentInput = input[0];
             let production = "";
 
             if (this.#isNonterminal(currentSymbol)) {
