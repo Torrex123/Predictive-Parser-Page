@@ -447,8 +447,8 @@ export default class ContextFreeGrammar {
         let process = "Stack\tInput\tOutput\n";
     
         while (stack.length > 0) {
-            let currentSymbol = stack[stack.length - 1];
-            let currentInput = input[0];
+            const currentSymbol = stack[stack.length - 1];
+            const currentInput = input[0];
             let production = "";
 
             if (this.#isNonterminal(currentSymbol)) {
