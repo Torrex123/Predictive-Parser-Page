@@ -66,7 +66,9 @@ export default class ContextFreeGrammar {
 
     #parseGrammar(cfg: string) {
         cfg.split("\n").forEach(production => {
-            let [ nonterminal, rule ] = production.split("->");
+            const sides = production.split("->");
+            const nonterminal = sides[0];
+            let rule = sides[1];
             this.#initializeNonterminal(nonterminal);
             rule = rule.replace(/&/g, '');
             if (rule === '') {
