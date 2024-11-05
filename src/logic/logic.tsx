@@ -66,8 +66,12 @@ export default class ContextFreeGrammar {
 
     #parseGrammar(cfg: string) {
         cfg.split("\n").forEach(production => {
-            const [ nonterminal, rule ] = production.split("->");
+            let [ nonterminal, rule ] = production.split("->");
             this.#initializeNonterminal(nonterminal);
+            rule = rule.replace(/&/g, '');
+            if (rule === '') {
+                rule = '&';
+            }
             this.grammar[nonterminal].add(rule);
             this.#classifySymbols(rule);
         });
@@ -100,7 +104,6 @@ export default class ContextFreeGrammar {
 
     #eliminateLeftRecursion() {
         for (const nonterminal of this.order) {
-            this.#expandRules(nonterminal);
             if (this.#isLeftRecursive(nonterminal, this.grammar[nonterminal])) {
                 this.#removeDirectLeftRecursion(nonterminal);
             }
@@ -180,76 +183,20 @@ export default class ContextFreeGrammar {
             if (leftNonterminal === nonterminal) {
                 this.grammar[newNonterminal].add(rule.slice(leftNonterminal.length) + newNonterminal);
             } else {
-                rules.add(rule + newNonterminal);
+                if (rule === "&") {
+                    rules.add(newNonterminal);
+                } else {
+                    rules.add(rule + newNonterminal);
+                }
             }
         });
+
+        if (rules.size === 0) {
+            rules.add(newNonterminal)
+        }
 
         this.grammar[newNonterminal].add("&");
         this.grammar[nonterminal] = rules;
-    }
-
-    #expandRules(nonterminal: string) {
-        const expandedRules = new Set<string>();
-
-        this.grammar[nonterminal].forEach(rule => {
-            const expanded = this.#expandRule(nonterminal, rule);
-            if (expanded) {
-                expanded.forEach(exp => expandedRules.add(exp));
-            } else {
-                expandedRules.add(rule);
-            }
-        });
-
-        this.grammar[nonterminal] = expandedRules
-    }
-
-    #expandRule(nonterminal: string, rule: string) {
-        const expansions = [rule];
-        const expansionGroups: string[][] = [];
-
-        for (const expansion of expansions) {
-            const group: string[] = [];
-
-            expansionGroups.push(group);
-
-            const leftNonterminal = this.#getLeftNonterminal(expansion);
-
-            if (!leftNonterminal || this.order.indexOf(leftNonterminal) >= this.order.indexOf(nonterminal)) {
-                continue;
-            }
-
-            const expansionTail = expansion.slice(leftNonterminal.length);
-
-            this.grammar[leftNonterminal].forEach(derivation => {
-                const newExpansion = derivation + expansionTail;
-                expansions.push(newExpansion);
-                group.push(newExpansion);
-            });
-        }
-
-        const finalExpansions = new Set(
-            expansions.filter((exp, i) => expansionGroups[i].length === 0)
-        );
-
-        if (this.#isLeftRecursive(nonterminal, expansions)) {
-            this.#contractExpansions(nonterminal, finalExpansions, expansions, expansionGroups);
-            return finalExpansions;
-        }
-
-        this.#contractExpansions(nonterminal, finalExpansions, expansions, expansionGroups);
-        return null;
-    }
-
-    #contractExpansions(nonterminal: string, finalExpansions: Set<string>, expansions: string[], expansionGroups: string[][]) {
-        for (let i = expansions.length - 1; i >= 0; i--) {           
-            const origin = expansions[i];
-            const group = expansionGroups[i];
-
-            if (!this.#isLeftRecursive(nonterminal, group) && group.every(expansion => finalExpansions.has(expansion))) {
-                group.forEach(expansion => finalExpansions.delete(expansion));
-                finalExpansions.add(origin);
-            }
-        }
     }
 
     #calculateFirstSet() {
@@ -495,6 +442,3 @@ export default class ContextFreeGrammar {
         return this.terminals;
     }
 }
-
-
-

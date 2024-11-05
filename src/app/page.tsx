@@ -14,21 +14,24 @@ export default function Home() {
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
+    const fileInput = event.target;
+    const file = fileInput.files ? fileInput.files[0] : null;
+
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target ? e.target.result : null;
-        if (content) {
-          if (typeof content === 'string') {
-            validateGrammar(content);
-          } else {
-            console.error('File content is not a string.');
-          }
-        }
-      };
-      reader.readAsText(file);
-    }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target ? e.target.result : null;
+            if (content) {
+                if (typeof content === 'string') {
+                    validateGrammar(content);
+                } else {
+                    console.error('File content is not a string.');
+                }
+            }
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+      }
   };
 
   const validateGrammar = (content: string) => {
