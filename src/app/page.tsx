@@ -167,7 +167,7 @@ export default function Home() {
   }
 
   const mTable = () => {
-    const terminals = Array.from(cfg.getTerminals()); 
+    const terminals = Array.from(cfg.getTerminals()).filter(terminal => terminal !== '&'); 
     terminals.push('$'); 
     const order = cfg.getOrder(); 
     const tableM = cfg.getTable(); 
