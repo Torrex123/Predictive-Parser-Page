@@ -313,43 +313,50 @@ export default class ContextFreeGrammar {
     }
 
     #table() {
-
         const m: { [key: string]: { [key: string]: string } } = {};
     
         for (const nonterminal of this.order) {
             m[nonterminal] = {}; 
         }
-
+    
         for (const nonterminal of this.order) {
             for (const rule of this.grammar[nonterminal]) {
                 const symbols = this.#splitSymbols(rule);
-
-                if (symbols && symbols[0] === '&') {
+                if (!symbols) continue;
+    
+                if (symbols[0] === '&') {
                     for (const terminal of this.follows[nonterminal]) {
                         m[nonterminal][terminal] = rule;
                     }
                     continue;
                 }
-
-                if (symbols && !this.#isNonterminal(symbols[0])) {
-                    const terminal = symbols[0];
-                    m[nonterminal][terminal] = rule;
-                    continue;
-                }
-
-                if (!symbols) continue;
-                const firstSet = this.firsts[symbols[0]];
-                
-                if (firstSet.has('&')) {
-                    const withoutEpsilon = new Set(firstSet);
-                    withoutEpsilon.delete('&');
-                    const followSet = this.follows[nonterminal];
-                    const union = new Set([...withoutEpsilon, ...followSet]);
-                    for (const terminal of union) {
-                        m[nonterminal][terminal] = rule;
+    
+                let index = 0;
+                let hasEpsilon = true;
+    
+                while (hasEpsilon && index < symbols.length) {
+                    const currentSymbol = symbols[index];
+    
+                    if (!this.#isNonterminal(currentSymbol)) {
+                        m[nonterminal][currentSymbol] = rule;
+                        hasEpsilon = false;
+                    } else {
+                        const firstSet = new Set(this.firsts[currentSymbol]);
+                        if (firstSet.has('&')) {
+                            firstSet.delete('&');
+                        } else {
+                            hasEpsilon = false;
+                        }
+    
+                        for (const terminal of firstSet) {
+                            m[nonterminal][terminal] = rule;
+                        }
                     }
-                } else {
-                    for (const terminal of firstSet) {
+                    index++;
+                }
+    
+                if (hasEpsilon) {
+                    for (const terminal of this.follows[nonterminal]) {
                         m[nonterminal][terminal] = rule;
                     }
                 }
@@ -359,6 +366,7 @@ export default class ContextFreeGrammar {
         this.table = m;
         return m;
     }
+    
 
     ASDalgorithm(input: string) {
         const stack = ["$", this.order[0]];
