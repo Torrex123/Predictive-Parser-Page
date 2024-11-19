@@ -12,6 +12,7 @@ export default function Home() {
   const [stringToEvaluate, setStringToEvaluate] = useState('');
   const [evaluationResult, setEvaluationResult] = useState<string[][] | null>(null);
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
+  const [contains$, setContains$] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -208,9 +209,19 @@ export default function Home() {
   };
 
   const validateInput = () => {
+
     
     const evaliuateString = (string: string) => {
-      const result = cfg.ASDalgorithm(string);    
+      
+      setContains$(false);
+      if (string.includes('$')) {
+        setEvaluationResult(null);
+        setContains$(true);
+        return; 
+      }
+
+      const string_to_eval = string.replace(/&/g, '')
+      const result = cfg.ASDalgorithm(string_to_eval);    
       const rows = result
                   .split('\n')
                   .map(line => line.split('\t'))
@@ -267,6 +278,12 @@ export default function Home() {
             <h4 className={styles.acceptanceStatus}>
               {isAccepted ? 'String is accepted!' : 'String is not accepted.'}
             </h4>
+          </div>
+        )}
+
+        {contains$ && (
+          <div className={styles.error}>
+            <p>String cannot contain the symbol '$'.</p>
           </div>
         )}
       </div>
