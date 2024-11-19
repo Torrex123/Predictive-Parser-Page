@@ -283,7 +283,7 @@ export default function Home() {
 
         {contains$ && (
           <div className={styles.error}>
-            <p>String cannot contain the symbol '$'.</p>
+            <p>String cannot contain the symbol &apos;$&apos;.</p>
           </div>
         )}
       </div>
